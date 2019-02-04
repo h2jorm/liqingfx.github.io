@@ -14,7 +14,7 @@
 </head>
 
 <body>
-<article><h1 id="使用 Wireshark 观察 MySQL 行为"><a href="#使用 Wireshark 观察 MySQL 行为">使用 Wireshark 观察 MySQL 行为</a></h1><p><em>2019-01-27</em></p>
+<article><h1>使用 Wireshark 观察 MySQL 行为</h1><p><em>2019-01-27</em></p>
 <p>一般网络应用程序会通过 TCP 协议和 MySQL 服务器通信，所以通过嗅探这条 TCP 连接上往来数据，可以间接观察到 MySQL 服务器的各种行为。本文将会使用流行的 Wireshark 软件，观察一些特定的 MySQL 行为。</p>
 <h2 id="观察前准备"><a href="#观察前准备">观察前准备</a></h2><p>假设在本机已经存在一个 MySQL 服务器，运行在默认的 3306 端口，用户名为 root，密码为 hello。运行下面的 SQL 语句，生成用于测试的数据库 <code>test</code> 和表 <code>user</code>。</p>
 <pre><code>CREATE SCHEMA IF NOT EXISTS `test` DEFAULT CHARACTER SET utf8 ;
@@ -29,20 +29,21 @@ ENGINE = InnoDB;</code></pre><p>打开 Wireshark 软件，选择本地的环回�
 <h2 id="简单的查询"><a href="#简单的查询">简单的查询</a></h2><p>接下来，编写一段简单的 node.js 脚本作为客户端连接 MySQL 服务器。</p>
 <pre><code>const mysql = require(&#39;mysql&#39;);
 
-<p>const conn = mysql.createConnection({
+const conn = mysql.createConnection({
     host: &#39;localhost&#39;,
     port: 3306,
     user: &#39;root&#39;,
     password: &#39;hello&#39;,
     database: &#39;test&#39;
-});</p>
-<p>conn.query(&#39;select 1&#39;, (err, results) =&gt; {
+});
+
+conn.query(&#39;select 1&#39;, (err, results) =&gt; {
     if (err) {
         console.error(err);
         return;
     }
     conn.end();
-});</code></pre><p>运行上面的脚本后，Wireshark 中会捕获到若干个 IP 数据包，如下图所示</p></p>
+});</code></pre><p>运行上面的脚本后，Wireshark 中会捕获到若干个 IP 数据包，如下图所示</p>
 <p><img src="/assets/2019/01/28/wireshark_no_filtered.jpg" alt="wireshark_no_filtered"></p>
 <p>为简化表述，本文不讨论 TCP 协议的细节，所以可以在 Wireshark 的顶部过滤器中输入 <code>mysql</code> 以进一步过滤，只显示和 MySQL 协议相关的数据包，如下图</p>
 <p><img src="/assets/2019/01/28/wireshark_filtered.jpg" alt="wireshark_filtered"></p>
@@ -58,28 +59,31 @@ ENGINE = InnoDB;</code></pre><p>打开 Wireshark 软件，选择本地的环回�
 <h2 id="事务提交和事务回滚"><a href="#事务提交和事务回滚">事务提交和事务回滚</a></h2><p>在观察 MySQL 服务器如何执行事务之前，为避免过多的回调函数影响脚本的可读性，先封装一些辅助函数。将下面的代码写入 <code>db.js</code>文件中。</p>
 <pre><code>const mysql = require(&#39;mysql&#39;);
 
-<p>const pool = (exports.pool = mysql.createPool({
+const pool = (exports.pool = mysql.createPool({
     host: &#39;localhost&#39;,
     port: 3306,
     user: &#39;root&#39;,
     password: &#39;hello&#39;,
     database: &#39;test&#39;
-}));</p>
-<p>exports.getConn = async function getConn() {
+}));
+
+exports.getConn = async function getConn() {
     return new Promise((resolve, reject) =&gt; {
         pool.getConnection((err, conn) =&gt; {
             err ? reject(err) : resolve(conn);
         });
     });
-};</p>
-<p>exports.query = async function query(conn, ...args) {
+};
+
+exports.query = async function query(conn, ...args) {
     return new Promise((resolve, reject) =&gt; {
         conn.query(...args, (err, results) =&gt; {
             err ? reject(err) : resolve(results);
         });
     });
-};</p>
-<p>exports.end = function end() {
+};
+
+exports.end = function end() {
     pool.end(err =&gt; {
         if (err) {
             console.error(err);
@@ -87,26 +91,29 @@ ENGINE = InnoDB;</code></pre><p>打开 Wireshark 软件，选择本地的环回�
         }
         console.log(&#39;pool ended&#39;);
     });
-};</p>
-<p>exports.sleep = function sleep(s) {
+};
+
+exports.sleep = function sleep(s) {
     return new Promise(resolve =&gt; {
         setTimeout(resolve, s);
     });
-};</p>
-<p>exports.tx = function tx(conn) {
+};
+
+exports.tx = function tx(conn) {
     return new Promise((resolve, reject) =&gt; {
         conn.beginTransaction(async err =&gt; {
             err ? reject(err) : resolve();
         });
     });
-};</p>
-<p>exports.commit = function commit(conn) {
+};
+
+exports.commit = function commit(conn) {
     return new Promise((resolve, reject) =&gt; {
         conn.commit(async err =&gt; {
             err ? reject(err) : resolve();
         });
     });
-};</code></pre><p>然后编写以下脚本，并执行</p></p>
+};</code></pre><p>然后编写以下脚本，并执行</p>
 <pre><code>const { getConn, query, end, tx, commit } = require(&#39;./db&#39;);
 
 async function main() {
@@ -134,7 +141,7 @@ main().catch(err =&gt; {
 <p>再观察 MySQL 服务器事务回滚的行为，编写脚本并运行。</p>
 <pre><code>const { getConn, query, end, tx, commit, rollback } = require(&#39;./db&#39;);
 
-<p>async function main() {
+async function main() {
     const conn = await getConn();
     await tx(conn);
     try {
@@ -153,17 +160,18 @@ main().catch(err =&gt; {
     } finally {
         await end();
     }
-}</p>
-<p>main().catch(err =&gt; {
+}
+
+main().catch(err =&gt; {
     console.error(err);
-});</code></pre><p>这段脚本中执行了两遍 <code>insert into user (id, name, age) values (1, &quot;a&quot;, 1)</code>，因为 id 是主键，所以，最迟在执行第二次的时候，MySQL 服务器会返回错误的响应，如图</p></p>
+});</code></pre><p>这段脚本中执行了两遍 <code>insert into user (id, name, age) values (1, &quot;a&quot;, 1)</code>，因为 id 是主键，所以，最迟在执行第二次的时候，MySQL 服务器会返回错误的响应，如图</p>
 <p><img src="/assets/2019/01/28/rollback_1.jpg" alt="rollback_1"></p>
 <p>于是脚本将进入 catch 分支，向服务器提交回滚请求，如图</p>
 <p><img src="/assets/2019/01/28/rollback_2.jpg" alt="rollback_2"></p>
 <h2 id="锁"><a href="#锁">锁</a></h2><p>在使用事务型引擎的数据表中修改某条记录时，存储引擎会为该条记录加上行级锁。如果同时有其他尝试修改该记录的动作，必须等待本次修改结束后，即行级锁解开后，才能进行。锁的概念比较抽象，下面这段脚本配合 Wireshark 捕获的数据包能够比较具象地观察到锁。</p>
 <pre><code>const { getConn, sleep, query, end, tx, commit } = require(&#39;./db&#39;);
 
-<p>async function main() {
+async function main() {
     const connA = await getConn();
     const connB = await getConn();
     await tx(connA);
@@ -171,10 +179,11 @@ main().catch(err =&gt; {
     query(connB, &#39;update user set age = 3 where id = 1&#39;).then(end);
     await sleep(1000);
     await commit(connA);
-}</p>
-<p>main().catch(err =&gt; {
+}
+
+main().catch(err =&gt; {
     console.error(&#39;main&#39;, err);
-});</code></pre><p>在上面的脚本中，先建立两条 TCP 连接。在连接 A 中，开启事务，然后执行将记录 1 的 age 字段修改为 2 的修改。然后，连接 B 提交将记录 1 的 age 字段修改为 3 的修改（注意，这条语句之前没有 await 关键字，这很重要）。因为，连接 A 的事务还没提交，所以，连接 B 的修改必须等待。一秒后，连接 A 提交了事务，记录 1 的 age 被修改为 2；然后，连接 B的修改也完成，记录 1 的 age 被修改为 3。Wireshark 捕获的数据包如下，图中，连接 A 使用的是 49503 端口，连接 B 使用的是 49504 端口。</p></p>
+});</code></pre><p>在上面的脚本中，先建立两条 TCP 连接。在连接 A 中，开启事务，然后执行将记录 1 的 age 字段修改为 2 的修改。然后，连接 B 提交将记录 1 的 age 字段修改为 3 的修改（注意，这条语句之前没有 await 关键字，这很重要）。因为，连接 A 的事务还没提交，所以，连接 B 的修改必须等待。一秒后，连接 A 提交了事务，记录 1 的 age 被修改为 2；然后，连接 B的修改也完成，记录 1 的 age 被修改为 3。Wireshark 捕获的数据包如下，图中，连接 A 使用的是 49503 端口，连接 B 使用的是 49504 端口。</p>
 <p><img src="/assets/2019/01/28/lock_1.jpg" alt="lock_1"></p>
 <p>连接 A 在开启事务后先请求修改
 <img src="/assets/2019/01/28/lock_2.jpg" alt="lock_2"></p>
@@ -191,7 +200,7 @@ main().catch(err =&gt; {
 <p>可以将上一段脚本修改成下面的样子，就能观察到上述场景。</p>
 <pre><code>const { getConn, sleep, query, end, tx, commit } = require(&#39;./db&#39;);
 
-<p>async function main() {
+async function main() {
     const connA = await getConn();
     const connB = await getConn();
     await tx(connA);
@@ -203,10 +212,11 @@ main().catch(err =&gt; {
     }
     await commit(connA);
     end();
-}</p>
-<p>main().catch(err =&gt; {
+}
+
+main().catch(err =&gt; {
     console.error(&#39;main&#39;, err);
-});</code></pre><p><img src="/assets/2019/01/28/lock_timeout.jpg" alt="lock_timeout"></p></p>
+});</code></pre><p><img src="/assets/2019/01/28/lock_timeout.jpg" alt="lock_timeout"></p>
 <p>如图，连接 A 使用 49822 端口，连接 B 使用 49823 端口。231 号数据包是 MySQL 服务器在 50 秒后向连接 B 发送的锁定超时错误。</p>
 </article>
 

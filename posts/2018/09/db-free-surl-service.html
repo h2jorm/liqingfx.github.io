@@ -14,7 +14,7 @@
 </head>
 
 <body>
-<article><h1 id="实现无数据库依赖的短网址服务"><a href="#实现无数据库依赖的短网址服务">实现无数据库依赖的短网址服务</a></h1><p><em>2018-09-29</em></p>
+<article><h1>实现无数据库依赖的短网址服务</h1><p><em>2018-09-29</em></p>
 <p>短网址是指为冗长的 URL 指定的一个简短的别名。以新浪微博中被广泛使用的新浪短域名为例，当用户访问 <a href="http://t.cn/Rp7YRQG">http://t.cn/Rp7YRQG</a> 时，服务器会返回重定向到 <a href="https://www.baidu.com">https://www.baidu.com</a> 的 302 响应，一般情况下，浏览器会自动跳转到百度。</p>
 <p>短网址的好处主要在于方便传播。早期微博有 140 个字的上限，用户发布的 URL 会被分配一个 t.cn 的短网址以减少占用字符；手机营销短信也因为同样的原因大量使用短网址。此外，用智能手机扫描某个二维码，很有可能也是个短网址。因为，使用冗长的网址生成的二维码因信息量较大，会有比较明显的扫描失败概率。</p>
 <p>短网址的使用如此广泛，以至于各大互联网厂商都提供了免费可用的短网址服务。比如，google 的 goo.gl（目前已经被废弃，谷歌官方推荐使用 Firebase 的 Dynamic Links 替代），国内百度的 dwz.cn 等。</p>
@@ -53,49 +53,53 @@
 <p>下面使用 Golang 设计一个名为 surl 的包，用以实现 SURL 层。为表述清晰，这里只提供接口设计。</p>
 <pre><code>package surl
 
-<p>// 映射算法
+// 映射算法
 type Mapping interface {
     // id -&gt; hex
     Itoa(int64) string
     // hex -&gt; id
     Atoi(string) (int64, error)
-}</p>
-<p>// 数据存储引擎
+}
+
+// 数据存储引擎
 type Storage interface {
     // 获取下一个全局递增 id
     NextID() (int64, error)
     // 在 id 对应的位置插入一个原始链接
-    Insert(int64, <em>url.URL) error
+    Insert(int64, *url.URL) error
     // 查询该 id 对应位置的链接数据
-    Query(int64) (</em>url.URL, error)
-}</p>
-<p>// 短网址服务的聚合入口
+    Query(int64) (*url.URL, error)
+}
+
+// 短网址服务的聚合入口
 type SURL interface {
     Mapping Mapping
     Storage Storage
     // 用于配置短网址的域名
-    Root <em>url.URL
+    Root *url.URL
     // 生成短地址（默认使用全局递增 id，也可以指定目标 id）
-    Shorten(</em>url.URL, ids ...int64) (<em>url.URL, error)
+    Shorten(*url.URL, ids ...int64) (*url.URL, error)
     // 查询短地址的原始链接
-    Parse(</em>url.URL) (*url.URL, error)
-}</code></pre><p>下面是两个具体业务操作，新增映射（SURL.Shorten）和查询映射（SURL.Parse）的时序图。为表述清晰，暂时假设 API 服务器是基于 HTTP 请求的。</p></p>
+    Parse(*url.URL) (*url.URL, error)
+}</code></pre><p>下面是两个具体业务操作，新增映射（SURL.Shorten）和查询映射（SURL.Parse）的时序图。为表述清晰，暂时假设 API 服务器是基于 HTTP 请求的。</p>
 <p><img src="/assets/2018/09/surl_shorten_sequence_diagram.jpeg" alt="新增短地址映射"></p>
 <p><img src="/assets/2018/09/surl_parse_sequence_diagram.jpeg" alt="查询短地址映射"></p>
 <p>以上的具体代码实现，已经发布到 <a href="https://github.com/liqingfx/surl">Github/liqingfx/surl</a>，这里省略代码细节。只简单展示这个包的 API 调用方式。</p>
 <pre><code>package main
 
-<p>import (
+import (
     &quot;log&quot;
     &quot;net/url&quot;
     &quot;github.com/liqingfx/surl&quot;
-)</p>
-<p>func checkErr(err error) {
+)
+
+func checkErr(err error) {
     if err != nil {
         log.Fatal(err.Error())
     }
-}</p>
-<p>func main() {
+}
+
+func main() {
     var err error
     dirname := &quot;data&quot;
     storage, err := surl.NewBasicStore(dirname)
@@ -108,14 +112,16 @@ type SURL interface {
         Mapping: surl.Hex62,
         Storage: storage,
         Root:    root,
-    }</p>
-<pre><code>a, err := url.Parse(&amp;quot;http://a.com/a&amp;quot;)
-checkErr(err)
-hexedA, err := su.Shorten(a)
-checkErr(err)
+    }
 
-originA, err := su.Parse(hexedA)
-checkErr(err)</code></pre><p>}</code></pre><p><code>surl</code> 包抽象了 <code>Mapping</code> 和 <code>Storage</code> 接口，所以，如果有自定义的需求。比如说，需要将六十二进制的映射算法更改为其他算法，或需要根据实际的业务特点优化上文中的索引数据结构，都可以自行实现这两个接口，并替换 <code>surl</code>提供的基础实现。</p></p>
+    a, err := url.Parse(&quot;http://a.com/a&quot;)
+    checkErr(err)
+    hexedA, err := su.Shorten(a)
+    checkErr(err)
+
+    originA, err := su.Parse(hexedA)
+    checkErr(err)
+}</code></pre><p><code>surl</code> 包抽象了 <code>Mapping</code> 和 <code>Storage</code> 接口，所以，如果有自定义的需求。比如说，需要将六十二进制的映射算法更改为其他算法，或需要根据实际的业务特点优化上文中的索引数据结构，都可以自行实现这两个接口，并替换 <code>surl</code>提供的基础实现。</p>
 <h2 id="总结"><a href="#总结">总结</a></h2><p>本文简要介绍了两种短地址映射算法，并基于其中的全局递增 id 算法阐述一种无外部数据库依赖的实现，最后给出了一份可运行的代码。一个成熟的短地址服务当然应该有一些其他功能特性，比如短地址的重定向统计等。这些附加功能可以根据组织业务的实际情况，并以上文的代码库为蓝本继续开发。</p>
 </article>
 
