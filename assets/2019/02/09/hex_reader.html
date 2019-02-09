@@ -1,0 +1,31 @@
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <link rel="stylesheet" href="./hex_reader.css" />
+    <title>Hex Reader</title>
+  </head>
+  <body>
+    <div class="form">
+      <div class="form-group">
+        <label for="binaryFile">Select File</label>
+        <input type="file" id="binaryFile" />
+      </div>
+      <div class="form-group">
+        <label for="hexStream">Or Input Hex Stream</label>
+        <input
+          type="text"
+          id="hexStream"
+          placeholder="for example: 3ecb50020064"
+        />
+      </div>
+      <div class="form-group">
+        <label></label>
+        <button id="render">Render</button>
+      </div>
+    </div>
+    <div id="root"></div>
+    <script src="./hex_reader.js"></script>
+  </body>
+</html>

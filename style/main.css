@@ -78,6 +78,10 @@ article h2 a:visited {
   color: #333;
 }
 
+iframe {
+  border: 0;
+}
+
 .blog-title {
   font-size: 28px;
 }

@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en_US">
+
+<head>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+
+  <title>简单的二进制数据阅读器 | 李青的网络日志</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <link rel="stylesheet" type="text/css" href="/style/normalize.css" />
+  <link rel="stylesheet" type="text/css" href="/style/main.css" />
+
+</head>
+
+<body>
+<article><h1>简单的二进制数据阅读器</h1><p>日常需要分析一些二进制数据，仿照 Wireshark 的二进制数据展示形式写了一个简单的工具。</p>
+<iframe src="/assets/2019/02/09/hex_reader.html" style="width: 100%; height: 400px"></iframe></article>
+
+<footer class="blog-footer">
+  <div>Post By <a href="mailto:liqing.fx@gmail.com">liqing.fx@gmail.com</a></div>
+  <div>Host On <a target="_blank" href="https://github.com/liqingfx">Github</a></div>
+</footer>
+
+<a class="blog-back" href="/">Back</a>
+<div id="disqus_thread"></div>
+<script>
+var disqus_config = function () {
+this.page.url = "https://blog.liqing.name/posts/2019/02/hex-reader.html";
+this.page.identifier = "7782f1ac3481d1874d767315cfceba90";
+};
+(function() { // DON'T EDIT BELOW THIS LINE
+var d = document, s = d.createElement('script');
+s.src = 'https://liqing-blog.disqus.com/embed.js';
+s.setAttribute('data-timestamp', +new Date());
+(d.head || d.body).appendChild(s);
+})();
+</script>
+<script>
+  (function() {
+    var a = document.querySelector('article');
+    a.addEventListener('click', function(event) {
+      var target = event.target;
+      if (target.tagName !== 'IMG') {
+        return
+      }
+      newImgJumbotron(target.src);
+    });
+    function newImgJumbotron(imgSrc) {
+      var container = document.createElement('div');
+      container.className = 'img-jumbotron';
+      var body = document.createElement('div');
+      body.className = 'img-jumbotron-body';
+      var close = document.createElement('div');
+      close.innerHTML = '&times;';
+      close.className = 'img-jumbotron-close';
+      var img = document.createElement('img');
+      img.src = imgSrc;
+      body.appendChild(close);
+      body.appendChild(img);
+      container.appendChild(body);
+      document.body.appendChild(container);
+      function closeDB() {
+        document.body.removeChild(container);
+      }
+      close.addEventListener('click', function() {
+        closeDB();
+      });
+      container.addEventListener('click', function(event) {
+        if (event.target === container) {
+          closeDB();
+        }
+      });
+      return container;
+    }
+  })();
+</script>
+</body>
+
+</html>

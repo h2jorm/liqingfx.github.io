@@ -1,0 +1,66 @@
+* {
+  box-sizing: border-box;
+}
+
+.form {
+  position: fixed;
+  width: 100%;
+  height: 100px;
+  top: 0;
+  left: 0;
+  padding: 10px 20px;
+  margin-bottom: 20px;
+  background-color: #fff;
+  z-index: 1;
+}
+
+.form-group {
+  margin-bottom: 10px;
+}
+
+.form-group > label {
+  display: inline-block;
+  width: 140px;
+  font-size: 12px;
+}
+
+#hexStream {
+  width: 320px;
+}
+
+#root {
+  padding-top: 120px;
+}
+
+.byte-container {
+  display: inline-flex;
+  flex-direction: column;
+  position: relative;
+  width: 40px;
+  height: 40px;
+  text-align: center;
+  cursor: pointer;
+}
+
+.byte-container.active,
+.byte-container:hover {
+  background-color: #eee;
+}
+
+.byte-group {
+  margin-bottom: 10px;
+}
+
+.char-content {
+  font-size: 12px;
+  line-height: 12px;
+  color: #999;
+}
+
+.binary-container {
+  position: absolute;
+  top: -16px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 12px;
+}

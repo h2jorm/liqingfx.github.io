@@ -100,8 +100,30 @@ class LinkList:
         return self.remove(0)
 
     def removeLast(self):
-        return self.remove(self.size() - 1)</code></pre><h3 id="并查集"><a href="#并查集">并查集</a></h3><p>todo</p>
-<h3 id="选择排序"><a href="#选择排序">选择排序</a></h3><pre><code>def selectionSort(a):
+        return self.remove(self.size() - 1)</code></pre><h3 id="并查集"><a href="#并查集">并查集</a></h3><pre><code>class DisjointSet:
+    def __init__(self, n):
+        self.list = list(range(n))
+        self.weight = [0]*n
+
+    def find(self, i):
+        while self.list[i] != i:
+            i = self.list[i]
+        return i
+
+    def union(self, i, j):
+        p = self.find(i)
+        q = self.find(j)
+        if p == q:
+            return
+        if self.weight[p] &lt; self.weight[q]:
+            self.list[p] = q
+            self.weight[q] += self.weight[p]
+        else:
+            self.list[q] = p
+            self.weight[p] += self.weight[q]
+
+    def connected(self, i, j):
+        return self.find(i) == self.find(j)</code></pre><h3 id="选择排序"><a href="#选择排序">选择排序</a></h3><pre><code>def selectionSort(a):
     for i in range(len(a)):
         selected = i
         for j in range(i + 1, len(a)):
@@ -228,8 +250,42 @@ def partition(a, lo, hi):
             self._down(index)</code></pre><h3 id="二叉查找树"><a href="#二叉查找树">二叉查找树</a></h3><p>todo</p>
 <h3 id="二分查找"><a href="#二分查找">二分查找</a></h3><p>todo</p>
 <h3 id="红黑树"><a href="#红黑树">红黑树</a></h3><p>todo</p>
-<h3 id="基于拉链法的散列表"><a href="#基于拉链法的散列表">基于拉链法的散列表</a></h3><p>todo</p>
-<h3 id="单词查找树"><a href="#单词查找树">单词查找树</a></h3><p>todo</p>
+<h3 id="基于拉链法的散列表"><a href="#基于拉链法的散列表">基于拉链法的散列表</a></h3><pre><code>class HashTable:
+    def __init__(self, n=10):
+        self.table = [[]] * n
+
+    def set(self, key, val):
+        hash = self.hash(key)
+        index = hash % len(self.table)
+        l = self.table[index]
+        l.append({
+            &#39;hash&#39;: hash,
+            &#39;val&#39;: val
+        })
+
+    def get(self, key):
+        hash = self.hash(key)
+        index = hash % len(self.table)
+        l = self.table[index]
+        for item in l:
+            if item[&#39;hash&#39;] == hash:
+                return item[&#39;val&#39;]
+        return None
+
+    def delete(self, key):
+        hash = self.hash(key)
+        index = hash % len(self.table)
+        l = self.table[index]
+        for idx, item in enumerate(l):
+            if item[&#39;hash&#39;] == hash:
+                l.pop(idx)
+                return
+
+    def hash(self, key):
+        hash = 0
+        for c in key:
+            hash = (hash &lt;&lt; 5) + ord(c)
+        return hash</code></pre><h3 id="单词查找树"><a href="#单词查找树">单词查找树</a></h3><p>todo</p>
 </article>
 
 <footer class="blog-footer">
