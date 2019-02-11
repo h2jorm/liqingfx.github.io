@@ -199,57 +199,102 @@ def partition(a, lo, hi):
             break
         swap(a, i, j)
     swap(a, lo, j)
-    return j</code></pre><h3 id="基于二叉堆的优先队列"><a href="#基于二叉堆的优先队列">基于二叉堆的优先队列</a></h3><pre><code>class MaxPQ:
+    return j</code></pre><h3 id="基于二叉堆的优先队列"><a href="#基于二叉堆的优先队列">基于二叉堆的优先队列</a></h3><pre><code>class QueueNode:
+    def __init__(self, ref, score):
+        self.ref = ref
+        self.score = score
+
+    def higherThan(self, b):
+        return self.score &gt; b.score
+
+    def __str__(self):
+        return &#39;{0.ref}-{0.score}&#39;.format(self)
+
+
+class PriorityQueue:
     def __init__(self):
-        self.queue = []
-        pass
-
-    def add(self, val):
-        self.queue.append(val)
-        self._up(self.size() - 1)
-        pass
-
-    def delMax(self):
-        if not self.size():
-            return None
-        self._swap(0, self.size() - 1)
-        ret = self.queue.pop()
-        self._down(0)
-        return ret
+        self.stack = []
 
     def size(self):
-        return len(self.queue)
-
-    def peek(self, i):
-        return self.queue[i]
+        return len(self.stack)
 
     def _swap(self, i, j):
-        self.queue[i], self.queue[j] = self.queue[j], self.queue[i]
+        self.stack[i], self.stack[j] = self.stack[j], self.stack[i]
 
     def _up(self, i):
-        if not i:
-            return
-        prevIndex = int((i - 1) / 2)
-        if self.queue[prevIndex] &lt; self.queue[i]:
-            self._swap(prevIndex, i)
-            self._up(prevIndex)
+        if i &lt;= 0:
+            return i
+        j = int((i - 1) / 2)
+        if self.stack[i].higherThan(self.stack[j]):
+            self._swap(i, j)
+            return j
+        else:
+            return i
+
+    def append(self, node):
+        i = self.size()
+        self.stack.append(node)
+        while True:
+            j = self._up(i)
+            if j != i:
+                i = j
+            else:
+                break
 
     def _down(self, i):
-        lIndex = 2 * i + 1
-        rIndex = 2 * i + 2
-        if lIndex &gt;= len(self.queue):
-            return
-        if rIndex &gt;= len(self.queue):
-            index = lIndex
+        j = 2 * i + 1
+        k = 2 * i + 2
+        # end
+        if j &gt;= self.size():
+            return i
+        # only left
+        if k &gt;= self.size():
+            pass
+        # left and right
         else:
-            l = self.queue[lIndex]
-            r = self.queue[rIndex]
-            index = lIndex if l &gt; r else rIndex
-        if self.queue[index] &gt; self.queue[i]:
-            self._swap(index, i)
-            self._down(index)</code></pre><h3 id="二叉查找树"><a href="#二叉查找树">二叉查找树</a></h3><p>todo</p>
+            # choose node of higher score
+            if self.stack[k].higherThan(self.stack[j]):
+                j = k
+        if self.stack[j].higherThan(self.stack[i]):
+            self._swap(i, j)
+            return j
+        else:
+            return i
+
+    def delMax(self):
+        if self.size() == 1:
+            return self.stack.pop()
+        self._swap(self.size() - 1, 0)
+        ret = self.stack.pop()
+        i = 0
+        while True:
+            j = self._down(i)
+            if i != j:
+                i = j
+            else:
+                break
+        return ret
+
+    def peek(self, i):
+        return self.stack[i]
+
+    def print(self):
+        l = []
+        for node in self.stack:
+            l.append(str(node))
+        print(&#39;, &#39;.join(l))
+
+
+pq = PriorityQueue()
+for i in range(10):
+    pq.append(QueueNode(i, i))
+
+pq.print()
+pq.delMax()
+pq.print()
+pq.append(QueueNode(9, 9))
+pq.print()</code></pre><h3 id="二叉查找树"><a href="#二叉查找树">二叉查找树</a></h3><p>todo</p>
 <h3 id="二分查找"><a href="#二分查找">二分查找</a></h3><p>todo</p>
-<h3 id="红黑树"><a href="#红黑树">红黑树</a></h3><p>todo</p>
 <h3 id="基于拉链法的散列表"><a href="#基于拉链法的散列表">基于拉链法的散列表</a></h3><pre><code>class HashTable:
     def __init__(self, n=10):
         self.table = [[]] * n
@@ -285,8 +330,51 @@ def partition(a, lo, hi):
         hash = 0
         for c in key:
             hash = (hash &lt;&lt; 5) + ord(c)
-        return hash</code></pre><h3 id="单词查找树"><a href="#单词查找树">单词查找树</a></h3><p>todo</p>
-</article>
+        return hash</code></pre><h3 id="单词查找树"><a href="#单词查找树">单词查找树</a></h3><pre><code>class TireNode:
+    def __init__(self):
+        self.path = 0
+        self.end = 0
+        self.next = [None] * 26
+
+
+class Tire:
+    def __init__(self):
+        self.root = TireNode()
+
+    def _readCharCodeAt(self, str, i):
+        return ord(str[i]) - ord(&#39;a&#39;)
+
+    def insert(self, str):
+        node = self.root
+        for i in range(len(str)):
+            charCode = self._readCharCodeAt(str, i)
+            if not node.next[charCode]:
+                node.next[charCode] = TireNode()
+            node = node.next[charCode]
+            node.path += 1
+        node.end += 1
+
+    def search(self, str):
+        node = self.root
+        for i in range(len(str)):
+            charCode = self._readCharCodeAt(str, i)
+            node = node.next[charCode]
+            if not node:
+                return 0
+        return node.end
+
+    def delete(self, str):
+        node = self.root
+        for i in range(len(str)):
+            charCode = self._readCharCodeAt(str, i)
+            if not node.next[charCode]:
+                return
+            if node.next[charCode].path == 1:
+                node.next[charCode] = None
+                return
+            node = node.next[charCode]
+            node.path -= 1
+        node.end -= 1</code></pre></article>
 
 <footer class="blog-footer">
   <div>Post By <a href="mailto:liqing.fx@gmail.com">liqing.fx@gmail.com</a></div>
